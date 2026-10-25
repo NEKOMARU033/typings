@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>タイピングRPG - デバイス選択</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+    }
+
+    body {
+      background: #0f172a;
+      color: #f8fafc;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .card {
+      background: #1e293b;
+      width: 100%;
+      max-width: 450px;
+      padding: 40px 30px;
+      border-radius: 16px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+      text-align: center;
+    }
+
+    h1 {
+      color: #38bdf8;
+      font-size: 2rem;
+      margin-bottom: 10px;
+      letter-spacing: 1px;
+    }
+
+    p.sub {
+      color: #94a3b8;
+      font-size: 0.95rem;
+      margin-bottom: 30px;
+    }
+
+    .btn {
+      background: #3b82f6;
+      color: white;
+      border: none;
+      padding: 16px 24px;
+      font-size: 1.1rem;
+      font-weight: bold;
+      border-radius: 8px;
+      cursor: pointer;
+      width: 100%;
+      margin-top: 15px;
+      display: block;
+      text-decoration: none;
+      transition: transform 0.1s, background 0.2s;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    }
+
+    .btn:hover { 
+      background: #2563eb; 
+      transform: translateY(-2px); 
+    }
+
+    .btn-mobile { 
+      background: #22c55e; 
+    }
+
+    .btn-mobile:hover { 
+      background: #16a34a; 
+    }
+  </style>
+</head>
+<body>
+
+  <div class="card">
+    <h1>TYPING RPG</h1>
+    <p class="sub">プレイするデバイスを選んでください</p>
+    
+    <!-- 同じフォルダ内にあるそれぞれのファイルへリンク -->
+    <a href="pc.html" class="btn">💻 PC版でプレイする</a>
+    <a href="mobile.html" class="btn btn-mobile">📱 スマホ版でプレイする</a>
+  </div>
+
+</body>
+</html>

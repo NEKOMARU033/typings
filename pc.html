@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>タイピングRPG (PC版)</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
+    body {
+      background: #0f172a;
+      color: #f8fafc;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      position: relative;
+    }
+    .money-hud {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      background: #1e293b;
+      border: 2px solid #38bdf8;
+      padding: 8px 16px;
+      border-radius: 20px;
+      font-size: 1.1rem;
+      font-weight: bold;
+      color: #38bdf8;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+    }
+    /* 右上のメニューに戻るボタン */
+    .top-menu-btn {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      background: #475569;
+      color: white;
+      border: 2px solid #64748b;
+      padding: 8px 16px;
+      border-radius: 20px;
+      font-size: 1rem;
+      font-weight: bold;
+      cursor: pointer;
+      text-decoration: none;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+      transition: background 0.2s, transform 0.1s;
+    }
+    .top-menu-btn:hover { background: #334155; transform: translateY(-2px); }
+
+    .card {
+      background: #1e293b;
+      width: 100%;
+      max-width: 650px;
+      padding: 30px;
+      border-radius: 16px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+      text-align: center;
+      position: relative;
+      margin-top: 30px;
+    }
+    h1 { color: #38bdf8; font-size: 2rem; margin-bottom: 15px; letter-spacing: 1px; }
+    p.sub { color: #94a3b8; font-size: 0.95rem; margin-bottom: 25px; }
+    .btn {
+      background: #3b82f6;
+      color: white;
+      border: none;
+      padding: 14px 24px;
+      font-size: 1.1rem;
+      font-weight: bold;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: transform 0.1s, background 0.2s;
+      width: 100%;
+      margin-top: 10px;
+    }
+    .btn:hover { background: #2563eb; transform: translateY(-2px); }
+    .btn-secondary { background: #475569; }
+    .btn-secondary:hover { background: #334155; }
+    .btn-disabled { background: #334155; color: #94a3b8; cursor: not-allowed; }
+    .screen { display: none; }
+    .screen.active { display: block; }
+    .gacha-box {
+      background: #0f172a;
+      border: 2px dashed #475569;
+      border-radius: 12px;
+      padding: 25px;
+      margin: 20px 0;
+      min-height: 180px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+    }
+    .rarity-badge {
+      font-size: 1.1rem;
+      font-weight: bold;
+      padding: 5px 16px;
+      border-radius: 20px;
+      margin-bottom: 12px;
+      display: inline-block;
+    }
+    .r-common { background: #64748b; color: #fff; }
+    .r-uncommon { background: #22c55e; color: #fff; }
+    .r-rare { background: #3b82f6; color: #fff; }
+    .r-legendary { background: #a855f7; color: #fff; }
+    .r-mythic { background: #f97316; color: #fff; }
+    .r-saikyo { 
+      background: linear-gradient(45deg, #f59e0b, #ef4444, #ec4899); 
+      color: #fff; 
+      font-weight: 900; 
+      text-shadow: 0 0 8px rgba(255,255,255,0.8);
+    }
+    .gacha-word { font-size: 1.4rem; font-weight: bold; margin-bottom: 8px; word-break: break-all; }
+    .gacha-roma { font-size: 1rem; color: #94a3b8; font-family: monospace; word-break: break-all; }
+    .word-box {
+      background: #0f172a;
+      border: 2px solid #3b82f6;
+      border-radius: 12px;
+      padding: 25px 20px;
+      margin-bottom: 15px;
+      word-break: break-all;
+      min-height: 150px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+    }
+    .japanese { font-size: 1.4rem; font-weight: bold; margin-bottom: 12px; color: #f8fafc; line-height: 1.4; }
+    .romaji { font-size: 1.15rem; font-family: 'Courier New', Courier, monospace; letter-spacing: 1px; line-height: 1.5; }
+    .typed { color: #22c55e; }
+    .current-char { color: #f59e0b; text-decoration: underline; }
+    .untyped { color: #64748b; }
+    .zukan-list { max-height: 320px; overflow-y: auto; text-align: left; background: #0f172a; border-radius: 8px; padding: 10px; margin-bottom: 15px; }
+    .zukan-item { padding: 10px; border-bottom: 1px solid #1e293b; display: flex; justify-content: space-between; align-items: center; font-size: 0.9rem; }
+    .zukan-item.locked { color: #475569; }
+    .rank-text { font-size: 4.5rem; font-weight: 900; color: #f59e0b; margin: 10px 0; text-shadow: 0 0 15px rgba(245, 158, 11, 0.4); }
+    .result-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px; }
+    .result-item { background: #0f172a; padding: 12px; border-radius: 8px; }
+    .result-label { font-size: 0.8rem; color: #94a3b8; }
+    .result-val { font-size: 1.3rem; font-weight: bold; color: #38bdf8; margin-top: 4px; }
+  </style>
+</head>
+<body>
+  <div class="money-hud">💰 お金残高: <span id="hud-money">0</span> 円</div>
+  <a href="menu.html" class="top-menu-btn">🏠 メニューへ</a>
+
+  <div class="card">
+    <div id="screen-menu" class="screen active">
+      <h1>TYPING RPG (PC)</h1>
+      <p class="sub">モードを選択してください</p>
+      <button class="btn" style="background: #ef4444;" onclick="startBattleMode()">⚔️ 敵を倒す（お金稼ぎ）</button>
+      <button class="btn" style="background: #22c55e; margin-top: 10px;" onclick="goToGacha()">🎲 ガチャを引く（20円）</button>
+      <button class="btn btn-secondary" style="margin-top: 10px;" onclick="openZukan()">📖 単語図鑑を見る (50種)</button>
+    </div>
+
+    <div id="screen-battle" class="screen">
+      <div style="font-size: 1.1rem; color: #ef4444; font-weight: bold; margin-bottom: 10px;" id="enemy-title">👾 敵が出現中！（撃破で +10円）</div>
+      <div class="word-box">
+        <div class="japanese" id="battle-jp-text">---</div>
+        <div class="romaji" id="battle-roma-text"><span class="untyped">---</span></div>
+      </div>
+      <button class="btn btn-secondary" onclick="resetToMenu()">ゲームメニューに戻る</button>
+    </div>
+
+    <div id="screen-gacha" class="screen">
+      <h1>単語ガチャ (全50種)</h1>
+      <p class="sub">1回 20円 ｜ ガチャを引くと即座にタイピングへ突入！</p>
+      <div class="gacha-box" id="gacha-display-box">
+        <span style="color: #64748b;">下のボタンを押してガチャを回す！</span>
+      </div>
+      <button class="btn" id="gacha-action-btn" onclick="pullGacha()">🎲 ガチャを回す (20円)</button>
+      <button class="btn btn-secondary" style="margin-top: 10px;" onclick="resetToMenu()">ゲームメニューに戻る</button>
+    </div>
+
+    <div id="screen-typing" class="screen">
+      <div style="margin-bottom: 15px;">
+        <span class="rarity-badge" id="type-rarity-badge">コモン</span>
+      </div>
+      <div class="word-box">
+        <div class="japanese" id="jp-text">---</div>
+        <div class="romaji" id="roma-text"><span class="untyped">---</span></div>
+      </div>
+      <button class="btn btn-secondary" onclick="resetToMenu()">ゲームメニューに戻る</button>
+    </div>
+
+    <div id="screen-zukan" class="screen">
+      <h1>単語図鑑 (全50種)</h1>
+      <p class="sub" id="zukan-count">発見率: 0 / 50 (0%)</p>
+      <div class="zukan-list" id="zukan-container"></div>
+      <button class="btn btn-secondary" onclick="resetToMenu()">ゲームメニューに戻る</button>
+    </div>
+
+    <div id="screen-result" class="screen">
+      <h2>CLEAR!</h2>
+      <div style="color: #94a3b8; margin-top: 5px;">評価ランク</div>
+      <div class="rank-text" id="rank-display">S</div>
+      <div class="result-grid">
+        <div class="result-item"><div class="result-label">レアリティ</div><div class="result-val" id="res-rarity">-</div></div>
+        <div class="result-item"><div class="result-label">クリアタイム</div><div class="result-val" id="res-time">0秒</div></div>
+        <div class="result-item"><div class="result-label">打鍵速度 (KPM)</div><div class="result-val" id="res-kpm">0</div></div>
+        <div class="result-item"><div class="result-label">文字数</div><div class="result-val" id="res-chars">0</div></div>
+      </div>
+      <button class="btn" onclick="goToGacha()">もう一度ガチャを引く</button>
+      <button class="btn btn-secondary" style="margin-top: 8px;" onclick="resetToMenu()">ゲームメニューに戻る</button>
+    </div>
+  </div>
+
+  <script>
+    const ROMAJI_TABLE = {
+      'あ': ['a'], 'い': ['i', 'yi'], 'う': ['u', 'wu', 'whu'], 'え': ['e'], 'お': ['o'],
+      'か': ['ka', 'ca'], 'き': ['ki'], 'く': ['ku', 'cu', 'qu'], 'け': ['ke'], 'こ': ['ko', 'co'],
+      'さ': ['sa'], 'し': ['shi', 'si', 'ci'], 'す': ['su'], 'せ': ['se', 'ce'], 'そ': ['so'],
+      'た': ['ta'], 'ち': ['chi', 'ti'], 'つ': ['tsu', 'tu'], 'て': ['te'], 'と': ['to'],
+      'な': ['na'], 'に': ['ni'], 'ぬ': ['nu'], 'ね': ['ne'], 'の': ['no'],
+      'は': ['ha'], 'ひ': ['hi'], 'ふ': ['fu', 'hu'], 'へ': ['he'], 'ほ': ['ho'],
+      'ま': ['ma'], 'み': ['mi'], 'む': ['mu'], 'め': ['me'], 'も': ['mo'],
+      'や': ['ya'], 'ゆ': ['yu'], 'よ': ['yo'],
+      'ら': ['ra'], 'り': ['ri'], 'る': ['ru'], 'れ': ['re'], 'ろ': ['ro'],
+      'わ': ['wa'], 'を': ['wo'], 'ん': ['nn', 'n', "xn"],
+      'が': ['ga'], 'ぎ': ['gi'], 'ぐ': ['gu'], 'げ': ['ge'], 'ご': ['go'],
+      'ざ': ['za'], 'じ': ['ji', 'zi'], 'ず': ['zu'], 'ぜ': ['ze'], 'ぞ': ['zo'],
+      'だ': ['da'], 'ぢ': ['di'], 'づ': ['du'], 'で': ['de'], 'ど': ['do'],
+      'ば': ['ba'], 'び': ['bi'], 'ぶ': ['bu'], 'べ': ['be'], 'ぼ': ['bo'],
+      'ぱ': ['pa'], 'ぴ': ['pi'], 'ぷ': ['pu'], 'ぺ': ['pe'], 'ぽ': ['po'],
+      'きゃ': ['kya'], 'きゅ': ['kyu'], 'きょ': ['kyo'],
+      'しゃ': ['sha', 'sya'], 'しゅ': ['shu', 'syu'], 'しょ': ['sho', 'syo'],
+      'ちゃ': ['cha', 'tya'], 'ちゅ': ['chu', 'tyu'], 'ちょ': ['cho', 'tyo'],
+      'にゃ': ['nya'], 'にゅ': ['nyu'], 'にょ': ['nyo'],
+      'ひゃ': ['hya'], 'ひゅ': ['hyu'], 'ひょ': ['hyo'],
+      'みゃ': ['mya'], 'みゅ': ['myu'], 'みょ': ['myo'],
+      'りゃ': ['rya'], 'りゅ': ['ryu'], 'りょ': ['ryo'],
+      'ぎゃ': ['gya'], 'ぎゅ': ['gyu'], 'ぎょ': ['gyo'],
+      'じゃ': ['ja', 'zya', 'jya'], 'じゅ': ['ju', 'zyu', 'jyu'], 'じょ': ['jo', 'zyo', 'jyo'],
+      'びゃ': ['bya'], 'びゅ': ['byu'], 'びょ': ['byo'],
+      'ぴゃ': ['pya'], 'ぴゅ': ['pyu'], 'ぴょ': ['pyo'],
+      'ぁ': ['a', 'la', 'xa'], 'ぃ': ['i', 'li', 'xi', 'yi'], 'ぅ': ['u', 'lu', 'xu'], 'ぇ': ['e', 'le', 'xe'], 'ぉ': ['o', 'lo', 'xo'],
+      'ー': ['-']
+    };
+
+    const GACHA_POOL = [
+      { id: 1, rarity: "コモン", class: "r-common", jp: "ねこ", kana: "ねこ" },
+      { id: 2, rarity: "コモン", class: "r-common", jp: "いぬ", kana: "いぬ" },
+      { id: 3, rarity: "コモン", class: "r-common", jp: "とり", kana: "とり" },
+      { id: 4, rarity: "コモン", class: "r-common", jp: "さかな", kana: "さかな" },
+      { id: 5, rarity: "コモン", class: "r-common", jp: "りんご", kana: "りんご" },
+      { id: 6, rarity: "コモン", class: "r-common", jp: "みかん", kana: "みかん" },
+      { id: 7, rarity: "コモン", class: "r-common", jp: "つくえ", kana: "つくえ" },
+      { id: 8, rarity: "コモン", class: "r-common", jp: "いす", kana: "いす" },
+      { id: 9, rarity: "コモン", class: "r-common", jp: "ほし", kana: "ほし" },
+      { id: 10, rarity: "コモン", class: "r-common", jp: "つき", kana: "つき" },
+      { id: 11, rarity: "コモン", class: "r-common", jp: "そら", kana: "そら" },
+      { id: 12, rarity: "コモン", class: "r-common", jp: "うみ", kana: "うみ" },
+      { id: 13, rarity: "アンコモン", class: "r-uncommon", jp: "さくら", kana: "さくら" },
+      { id: 14, rarity: "アンコモン", class: "r-uncommon", jp: "ひまわり", kana: "ひまわり" },
+      { id: 15, rarity: "アンコモン", class: "r-uncommon", jp: "えんぴつ", kana: "えんぴつ" },
+      { id: 16, rarity: "アンコモン", class: "r-uncommon", jp: "ノート", kana: "のーと" },
+      { id: 17, rarity: "アンコモン", class: "r-uncommon", jp: "消しゴム", kana: "けしごむ" },
+      { id: 18, rarity: "アンコモン", class: "r-uncommon", jp: "おにぎり", kana: "おにぎり" },
+      { id: 19, rarity: "アンコモン", class: "r-uncommon", jp: "チョコレート", kana: "ちょこれーと" },
+      { id: 20, rarity: "アンコモン", class: "r-uncommon", jp: "ジュース", kana: "じゅーす" },
+      { id: 21, rarity: "アンコモン", class: "r-uncommon", jp: "サッカー", kana: "さっかー" },
+      { id: 22, rarity: "アンコモン", class: "r-uncommon", jp: "ベースボール", kana: "べーすぼーる" },
+      { id: 23, rarity: "レア", class: "r-rare", jp: "キーボード", kana: "きーぼーど" },
+      { id: 24, rarity: "レア", class: "r-rare", jp: "タイピング", kana: "たいぴんぐ" },
+      { id: 25, rarity: "レア", class: "r-rare", jp: "ハイスコア", kana: "はいすこあ" },
+      { id: 26, rarity: "レア", class: "r-rare", jp: "プログラミング", kana: "ぷろぐらみんぐ" },
+      { id: 27, rarity: "レア", class: "r-rare", jp: "スマートフォン", kana: "すまーとふぉん" },
+      { id: 28, rarity: "レア", class: "r-rare", jp: "インターネット", kana: "いんたーねっと" },
+      { id: 29, rarity: "レア", class: "r-rare", jp: "グラフィック", kana: "ぐらふぃっく" },
+      { id: 30, rarity: "レア", class: "r-rare", jp: "コントローラー", kana: "こんとろーらー" },
+      { id: 31, rarity: "レア", class: "r-rare", jp: "ヘッドホン", kana: "へっどほん" },
+      { id: 32, rarity: "レア", class: "r-rare", jp: "モニター", kana: "もにたー" },
+      { id: 33, rarity: "レジェンダリー", class: "r-legendary", jp: "楽しい休み時間", kana: "たのしいやすみじかん" },
+      { id: 34, rarity: "レジェンダリー", class: "r-legendary", jp: "完全オリジナル作品", kana: "かんぜんおりじなるさくひん" },
+      { id: 35, rarity: "レジェンダリー", class: "r-legendary", jp: "伝説の騎士になる", kana: "でんせつのきしになる" },
+      { id: 36, rarity: "レジェンダリー", class: "r-legendary", jp: "エリート隊員たち", kana: "えりーとたいいんたち" },
+      { id: 37, rarity: "レジェンダリー", class: "r-legendary", jp: "秘密の地下迷宮", kana: "ひみつのちかめいきゅう" },
+      { id: 38, rarity: "レジェンダリー", class: "r-legendary", jp: "宝箱をあける", kana: "たからばこをあける" },
+      { id: 39, rarity: "レジェンダリー", class: "r-legendary", jp: "古代の魔法陣を描く", kana: "こだいのまほうじんをえがく" },
+      { id: 40, rarity: "レジェンダリー", class: "r-legendary", jp: "星空を駆けるペガサス", kana: "ほしぞらをかけるぺがさす" },
+      { id: 41, rarity: "ミシック", class: "r-mythic", jp: "宇宙を破壊する波動", kana: "ううちゅうをはかいするはどう" },
+      { id: 42, rarity: "ミシック", class: "r-mythic", jp: "時間を超越した冒険者", kana: "じかんをちょうえつしたぼうけんしゃ" },
+      { id: 43, rarity: "ミシック", class: "r-mythic", jp: "漆黒の闇を切り裂く剣", kana: "しっこくのやみをきりさくけん" },
+      { id: 44, rarity: "ミシック", class: "r-mythic", jp: "神話に語り継がれる英雄", kana: "しんわにかたりつがれるえいゆう" },
+      { id: 45, rarity: "ミシック", class: "r-mythic", jp: "次元の壁を打ち破る力", kana: "じげんのかべをうちやぶるちから" },
+      { id: 46, rarity: "最強", class: "r-saikyo", jp: "全力全開で奇跡を起こす能力者", kana: "ぜんりょくぜんかいできせきをおこすのうりょくしゃ" },
+      { id: 47, rarity: "最強", class: "r-saikyo", jp: "究極のタイピングマスターを目指す", kana: "きゅうきょくのたいぴんぐますたーをめざす" },
+      { id: 48, rarity: "最強", class: "r-saikyo", jp: "全宇宙を統べる絶対無敵の王", kana: "ぜんうちゅうをすべるぜったいむてきのおう" },
+      { id: 49, rarity: "最強", class: "r-saikyo", jp: "無限のエネルギーを秘めた神の化身", kana: "むげんのえねるぎーをひめたかみのはしん" },
+      { id: 50, rarity: "最強", class: "r-saikyo", jp: "伝説を超えた歴史上最強のタイパー", kana: "でんせつをこえたれきしじょうさいきょうのたいぱー" }
+    ];
+
+    const BATTLE_MID_WORDS = [
+      { enemy: "👾 スライム", jp: "こうげきを素早くかわす", kana: "こうげきをすばやくかわす" },
+      { enemy: "ゴブリン兵", jp: "鋭い爪でひっかいてきた", kana: "するどいつめでひっかいてきた" },
+      { enemy: "🛡️ ナイトボス", jp: "頑丈な盾で防御を固める", kana: "がんじょうなたてでぼうぎょをかためる" },
+      { enemy: "🔥 炎の魔神", jp: "激しい炎の魔法を放つ", kana: "はげしいほのおのまほうをはなつ" },
+      { enemy: "🐉 闇のドラゴン", jp: "強力なブレスが襲いかかる", kana: "きょうりょくなぶれすがおそいかかる" },
+      { enemy: "💀 骸骨の戦士", jp: "錆びた剣を大きく振り下ろす", kana: "さびたけんをおおきくふりおろす" },
+      { enemy: "🐺 荒野のウルフ", jp: "鋭い牙をむき出しにして走る", kana: "するどいきばをむきだしにしてはしる" },
+      { enemy: "🦇 吸血こうもり", jp: "闇のなかから音もなく忍び寄る", kana: "やみのなかからおともなくしのびよる" }
+    ];
+
+    let playerMoney = parseInt(localStorage.getItem('typing_money')) || 20;
+    let unlockedZukan = JSON.parse(localStorage.getItem('typing_zukan')) || [];
+    let gameMode = "none";
+    let currentWord = null;
+    let kanaUnits = [];
+    let currentUnitIdx = 0;
+    let typedInUnit = "";
+    let startTime = 0;
+    let totalTypedCount = 0;
+    let lastBattleIndex = -1;
+
+    function updateMoney(amount) {
+      playerMoney += amount;
+      localStorage.setItem('typing_money', playerMoney);
+      document.getElementById('hud-money').textContent = playerMoney;
+    }
+
+    function switchScreen(screenId) {
+      document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+      document.getElementById(screenId).classList.add('active');
+    }
+
+    function resetToMenu() {
+      gameMode = "none";
+      updateMoney(0);
+      switchScreen('screen-menu');
+    }
+
+    function goToGacha() {
+      updateMoney(0);
+      document.getElementById('gacha-display-box').innerHTML = `<span style="color: #64748b;">下のボタンを押してガチャを回す！</span>`;
+      const btn = document.getElementById('gacha-action-btn');
+      if (playerMoney < 20) {
+        btn.textContent = "💰 お金が足りません (20円必要)";
+        btn.className = "btn btn-disabled";
+      } else {
+        btn.textContent = "🎲 ガチャを回す (20円)";
+        btn.className = "btn";
+      }
+      switchScreen('screen-gacha');
+    }
+
+    function startBattleMode() {
+      gameMode = "battle";
+      switchScreen('screen-battle');
+      nextBattleWord();
+    }
+
+    function nextBattleWord() {
+      let randIdx;
+      do {
+        randIdx = Math.floor(Math.random() * BATTLE_MID_WORDS.length);
+      } while (randIdx === lastBattleIndex && BATTLE_MID_WORDS.length > 1);
+      lastBattleIndex = randIdx;
+      const w = BATTLE_MID_WORDS[randIdx];
+
+      currentWord = { enemy: w.enemy, jp: w.jp, kana: w.kana, rarity: "敵", class: "r-common" };
+      document.getElementById('enemy-title').textContent = `${currentWord.enemy} が現れた！（撃破で +10円）`;
+      kanaUnits = splitKanaIntoUnits(currentWord.kana);
+      currentUnitIdx = 0;
+      typedInUnit = "";
+      document.getElementById('battle-jp-text').textContent = currentWord.jp;
+      renderBattleView();
+    }
+
+    function renderBattleView() {
+      let typedHtml = "", currentHtml = "", untypedHtml = "";
+      for (let i = 0; i < kanaUnits.length; i++) {
+        let unit = kanaUnits[i], defaultRep = unit.allowed[0];
+        if (i < currentUnitIdx) typedHtml += `<span class="typed">${defaultRep}</span>`;
+        else if (i === currentUnitIdx) {
+          typedHtml += `<span class="typed">${defaultRep.substring(0, typedInUnit.length)}</span>`;
+          currentHtml += `<span class="current-char">${defaultRep.charAt(typedInUnit.length)}</span>`;
+          untypedHtml += `<span class="untyped">${defaultRep.substring(typedInUnit.length + 1)}</span>`;
+        } else untypedHtml += `<span class="untyped">${defaultRep}</span>`;
+      }
+      document.getElementById('battle-roma-text').innerHTML = typedHtml + currentHtml + untypedHtml;
+    }
+
+    function pullGacha() {
+      if (playerMoney < 20) return;
+      updateMoney(-20);
+      const rand = Math.random() * 100;
+      let targetRarity = rand < 35 ? "コモン" : rand < 65 ? "アンコモン" : rand < 85 ? "レア" : rand < 94 ? "レジェンダリー" : rand < 98 ? "ミシック" : "最強";
+      const filtered = GACHA_POOL.filter(w => w.rarity === targetRarity);
+      currentWord = filtered[Math.floor(Math.random() * filtered.length)];
+
+      if (!unlockedZukan.includes(currentWord.id)) {
+        unlockedZukan.push(currentWord.id);
+        localStorage.setItem('typing_zukan', JSON.stringify(unlockedZukan));
+      }
+
+      document.getElementById('gacha-display-box').innerHTML = `
+        <div class="rarity-badge ${currentWord.class}">${currentWord.rarity}</div>
+        <div class="gacha-word">${currentWord.jp}</div>
+        <div class="gacha-roma">${convertToDefaultRoma(currentWord.kana)}</div>
+      `;
+      setTimeout(startTypingMode, 1200);
+    }
+
+    function startTypingMode() {
+      gameMode = "typing";
+      switchScreen('screen-typing');
+      kanaUnits = splitKanaIntoUnits(currentWord.kana);
+      currentUnitIdx = 0;
+      typedInUnit = "";
+      startTime = Date.now();
+      totalTypedCount = 0;
+      const badge = document.getElementById('type-rarity-badge');
+      badge.textContent = currentWord.rarity;
+      badge.className = "rarity-badge " + currentWord.class;
+      document.getElementById('jp-text').textContent = currentWord.jp;
+      renderTypingView();
+    }
+
+    function renderTypingView() {
+      let typedHtml = "", currentHtml = "", untypedHtml = "";
+      for (let i = 0; i < kanaUnits.length; i++) {
+        let unit = kanaUnits[i], defaultRep = unit.allowed[0];
+        if (i < currentUnitIdx) typedHtml += `<span class="typed">${defaultRep}</span>`;
+        else if (i === currentUnitIdx) {
+          typedHtml += `<span class="typed">${defaultRep.substring(0, typedInUnit.length)}</span>`;
+          currentHtml += `<span class="current-char">${defaultRep.charAt(typedInUnit.length)}</span>`;
+          untypedHtml += `<span class="untyped">${defaultRep.substring(typedInUnit.length + 1)}</span>`;
+        } else untypedHtml += `<span class="untyped">${defaultRep}</span>`;
+      }
+      document.getElementById('roma-text').innerHTML = typedHtml + currentHtml + untypedHtml;
+    }
+
+    function convertToDefaultRoma(kana) {
+      let roma = "", i = 0;
+      while (i < kana.length) {
+        if (kana[i] === 'っ' && i + 1 < kana.length && ROMAJI_TABLE[kana[i+1]]) {
+          roma += ROMAJI_TABLE[kana[i+1]][0][0]; i++; continue;
+        }
+        if (i + 1 < kana.length && ROMAJI_TABLE[kana[i] + kana[i+1]]) {
+          roma += ROMAJI_TABLE[kana[i] + kana[i+1]][0]; i += 2; continue;
+        }
+        roma += ROMAJI_TABLE[kana[i]] ? ROMAJI_TABLE[kana[i]][0] : kana[i];
+        i++;
+      }
+      return roma;
+    }
+
+    function splitKanaIntoUnits(kana) {
+      let units = [], i = 0;
+      while (i < kana.length) {
+        if (kana[i] === 'っ' && i + 1 < kana.length) {
+          let nextChar = kana[i+1], nextAllowed = ROMAJI_TABLE[nextChar] || [nextChar];
+          let sokuonAllowed = [];
+          nextAllowed.forEach(seq => sokuonAllowed.push(seq[0] + seq));
+          sokuonAllowed.push('xtsu', 'ltsu', 'xtu', 'ltu');
+          units.push({ display: 'っ' + nextChar, allowed: sokuonAllowed, consumed: 2 });
+          i += 2; continue;
+        }
+        if (i + 1 < kana.length && ROMAJI_TABLE[kana[i] + kana[i+1]]) {
+          let pair = kana[i] + kana[i+1];
+          units.push({ display: pair, allowed: ROMAJI_TABLE[pair], consumed: 2 });
+          i += 2; continue;
+        }
+        let single = kana[i];
+        units.push({ display: single, allowed: ROMAJI_TABLE[single] || [single], consumed: 1 });
+        i++;
+      }
+      return units;
+    }
+
+    window.addEventListener('keydown', (e) => {
+      if (gameMode === "none" || e.key.length !== 1) return;
+      const key = e.key.toLowerCase(), unit = kanaUnits[currentUnitIdx];
+      let candidateTyped = typedInUnit + key;
+      if (unit.allowed.some(seq => seq.startsWith(candidateTyped))) {
+        typedInUnit = candidateTyped; totalTypedCount++;
+        if (unit.allowed.some(seq => seq === typedInUnit)) {
+          currentUnitIdx++; typedInUnit = "";
+          if (currentUnitIdx >= kanaUnits.length) {
+            if (gameMode === "battle") { updateMoney(10); nextBattleWord(); }
+            else if (gameMode === "typing") finishTyping();
+            return;
+          }
+        }
+        if (gameMode === "battle") renderBattleView();
+        else if (gameMode === "typing") renderTypingView();
+      }
+    });
+
+    function finishTyping() {
+      gameMode = "none";
+      const elapsedTimeSec = (Date.now() - startTime) / 1000;
+      const kpm = Math.round((totalTypedCount / elapsedTimeSec) * 60);
+      let rank = kpm >= 350 ? "SSS" : kpm >= 280 ? "SS" : kpm >= 220 ? "S" : kpm >= 160 ? "A" : kpm >= 100 ? "B" : "C";
+      document.getElementById('rank-display').textContent = rank;
+      document.getElementById('res-rarity').textContent = currentWord.rarity;
+      document.getElementById('res-time').textContent = elapsedTimeSec.toFixed(1) + "秒";
+      document.getElementById('res-kpm').textContent = kpm;
+      document.getElementById('res-chars').textContent = currentWord.kana.length + "文字";
+      switchScreen('screen-result');
+    }
+
+    function openZukan() {
+      switchScreen('screen-zukan');
+      const container = document.getElementById('zukan-container');
+      container.innerHTML = "";
+      document.getElementById('zukan-count').textContent = `発見率: ${unlockedZukan.length} / 50 (${Math.round((unlockedZukan.length/50)*100)}%)`;
+      GACHA_POOL.forEach(item => {
+        const isUnlocked = unlockedZukan.includes(item.id);
+        const div = document.createElement('div');
+        div.className = `zukan-item ${isUnlocked ? '' : 'locked'}`;
+        div.innerHTML = isUnlocked ? 
+          `<div><span class="rarity-badge ${item.class}" style="font-size:0.8rem; padding:2px 8px; margin-right:8px;">${item.rarity}</span><strong>${item.jp}</strong></div><div style="font-family:monospace; color:#94a3b8; font-size:0.85rem;">${convertToDefaultRoma(item.kana)}</div>` :
+          `<div><span class="rarity-badge r-common" style="font-size:0.8rem; padding:2px 8px; margin-right:8px; background:#334155;">？？？</span><strong>？？？？？</strong></div><div style="font-family:monospace; color:#475569; font-size:0.85rem;">??????</div>`;
+        container.appendChild(div);
+      });
+    }
+
+    updateMoney(0);
+  </script>
+</body>
+</html>
